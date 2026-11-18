@@ -1,0 +1,6 @@
+{
+  "name": "@subnetic/shared",
+  "private": true,
+  "type": "module",
+  "description": "Спільні zod-схеми для client і server"
+}

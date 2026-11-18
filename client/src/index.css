@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Токени теми: значення — RGB-канали, щоб працювали модифікатори прозорості (bg-accent/10). */
+@layer base {
+  :root {
+    --color-bg: 245 246 250; /* #F5F6FA */
+    --color-header: 255 255 255; /* #FFFFFF */
+    --color-card: 255 255 255; /* #FFFFFF */
+    --color-text: 23 26 43; /* #171A2B */
+    --color-muted: 91 97 121; /* #5B6179 */
+    --color-border: 230 232 240; /* #E6E8F0 */
+    --color-accent: 99 91 255; /* #635BFF */
+    --color-accent-soft: 238 237 255; /* #EEEDFF — фон акцентних бейджів/іконок */
+    --color-accent-text: 67 56 202; /* #4338CA */
+
+    --color-input-bg: 255 255 255; /* #FFFFFF */
+    --color-input-border: 138 144 168; /* #8A90A8 — 3:1 до фону (AA для меж) */
+    --color-control-border: 213 217 230; /* #D5D9E6 */
+    --color-link: 79 70 229; /* #4F46E5 */
+    --color-focus: 99 91 255; /* #635BFF */
+    --color-hover: 23 26 43; /* накладка з прозорістю */
+    --color-danger: 185 28 28; /* #B91C1C */
+    --color-danger-bg: 254 226 226; /* #FEE2E2 */
+    --color-info-bg: 219 234 254; /* #DBEAFE */
+    --color-info-text: 30 58 138; /* #1E3A8A */
+    --color-success-bg: 220 252 231; /* #DCFCE7 */
+    --color-success-text: 22 101 52; /* #166534 */
+    --color-warning-bg: 254 243 199; /* #FEF3C7 */
+    --color-warning-text: 146 64 14; /* #92400E */
+    --color-primary: 99 91 255; /* #635BFF — заливка акцентних кнопок */
+    --color-primary-hover: 84 76 240; /* #544CF0 */
+    --color-on-primary: 255 255 255; /* текст на primary / danger-solid */
+    --color-ink: 23 26 43; /* #171A2B — темний текст на білих елементах поверх primary (в обох темах) */
+    --color-danger-solid: 185 28 28; /* #B91C1C */
+    color-scheme: light;
+  }
+
+  .dark {
+    --color-bg: 15 18 32; /* #0F1220 */
+    --color-header: 10 12 23; /* #0A0C17 */
+    --color-card: 23 26 43; /* #171A2B */
+    --color-text: 241 243 250; /* #F1F3FA */
+    --color-muted: 168 174 200; /* #A8AEC8 */
+    --color-border: 42 47 77; /* #2A2F4D */
+    --color-accent: 139 133 255; /* #8B85FF */
+    --color-accent-soft: 37 35 74; /* #25234A */
+    --color-accent-text: 169 165 255; /* #A9A5FF */
+
+    --color-input-bg: 15 18 32; /* #0F1220 */
+    --color-input-border: 107 113 148; /* #6B7194 */
+    --color-control-border: 42 47 77; /* #2A2F4D */
+    --color-link: 169 165 255; /* #A9A5FF */
+    --color-focus: 169 165 255; /* #A9A5FF */
+    --color-hover: 255 255 255;
+    --color-danger: 252 165 165; /* #FCA5A5 */
+    --color-danger-bg: 59 26 36; /* #3B1A24 */
+    --color-info-bg: 30 42 74; /* #1E2A4A */
+    --color-info-text: 191 219 254; /* #BFDBFE */
+    --color-success-bg: 18 48 31; /* #12301F */
+    --color-success-text: 134 239 172; /* #86EFAC */
+    --color-warning-bg: 58 42 16; /* #3A2A10 */
+    --color-warning-text: 252 211 77; /* #FCD34D */
+    /* Кнопки лишаються #635BFF і в темній темі: білий текст на акценті #8B85FF не проходить AA. */
+    --color-primary: 99 91 255; /* #635BFF */
+    --color-primary-hover: 84 76 240; /* #544CF0 */
+    --color-on-primary: 255 255 255;
+    --color-ink: 23 26 43;
+    --color-danger-solid: 220 38 38; /* #DC2626 */
+    color-scheme: dark;
+  }
+
+  html {
+    @apply bg-bg font-sans text-text antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  body {
+    @apply min-h-screen bg-bg text-text;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  a {
+    color: rgb(var(--color-link));
+  }
+
+  a:focus-visible {
+    border-radius: 0.25rem;
+    outline: 2px solid rgb(var(--color-focus));
+    outline-offset: 2px;
+  }
+}
