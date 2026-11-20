@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { LoginData, PublicUser, RegisterData } from '@shared/auth';
 import * as authApi from '@/api/endpoints';
-import { clearToken, getToken, setToken } from '@/lib/token';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'guest';
 
@@ -19,11 +18,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PublicUser | null>(null);
-  // Без токена одразу «гість» — запит /me не потрібен.
-  const [status, setStatus] = useState<AuthStatus>(() => (getToken() ? 'loading' : 'guest'));
+  // Сесійна кука httpOnly — JS її не бачить, тож стан сесії дізнаємось лише запитом /me.
+  const [status, setStatus] = useState<AuthStatus>('loading');
 
   useEffect(() => {
-    if (!getToken()) return;
     const ctrl = new AbortController();
     authApi
       .fetchMe(ctrl.signal)
@@ -33,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (ctrl.signal.aborted) return;
-        // Токен недійсний (наприклад, сервер перезапустився): api-клієнт уже очистив його при 401.
+        // Сесії немає або вона минула (401) — користувач гість.
         setUser(null);
         setStatus('guest');
       });
@@ -41,17 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (data: LoginData) => {
+    // «Запам'ятати мене» передається серверу: він задає термін дії куки.
     const res = await authApi.login(data);
-    setToken(res.token, data.remember);
     setUser(res.user);
     setStatus('authenticated');
     return res.user;
   }, []);
 
   const register = useCallback(async (data: RegisterData) => {
+    // Після реєстрації сервер відкриває сесію як при вході без «Запам'ятати мене».
     const res = await authApi.register(data);
-    // Після реєстрації — як вхід без «Запам'ятати мене».
-    setToken(res.token, false);
     setUser(res.user);
     setStatus('authenticated');
     return res.user;
@@ -63,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Навіть якщо сервер недоступний, локально виходимо.
     } finally {
-      clearToken();
       setUser(null);
       setStatus('guest');
     }

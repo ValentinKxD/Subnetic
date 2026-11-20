@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "concurrently -k -n server,client -c magenta,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w server && npm run build -w client",
-    "typecheck": "npm run typecheck -w server && npm run typecheck -w client"
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
+    "seed": "npm run seed -w server",
+    "bot": "cd bot && python main.py"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

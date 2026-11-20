@@ -4,3 +4,17 @@ dist/
 .env
 .env.*
 !.env.example
+# Секрети сервера й бота 
+server/.env
+bot/.env
+
+# Python (Telegram-бот)
+bot/venv/
+__pycache__/
+*.pyc
+
+# Локальна БД SQLite
+server/data/
+
+# Кеш Vite
+.vite/

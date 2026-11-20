@@ -1,12 +1,4 @@
-/**
- * Єдиний стиль Subnetic: усі повторювані набори Tailwind-класів.
- *
- * Правила:
- * - кожне значення — ПОВНИЙ рядок класів (без шаблонів на кшталт `bg-${color}`),
- *   інакше Tailwind не знайде класи під час збірки;
- * - кольори тільки через токени теми (bg-card, text-muted, border-border, bg-primary…),
- *   жодних hex у компонентах — значення токенів у src/index.css.
- */
+/** Єдиний стиль Subnetic: усі повторювані набори Tailwind-класів */
 export const ui = {
   page: {
     shell: 'flex min-h-screen flex-col',
@@ -250,6 +242,18 @@ export const ui = {
     subtitle: 'text-sm text-muted',
     divider: 'flex flex-col gap-1 border-t border-border pt-4',
     subheading: 'mb-1 text-[15px] font-semibold text-text',
+  },
+
+  /** Блок курсів НБУ біля вибору валюти. */
+  rates: {
+    box: 'flex flex-col gap-3 rounded-xl border border-border bg-bg px-4 py-3',
+    header: 'flex flex-wrap items-center justify-between gap-2',
+    title: 'text-sm font-semibold text-text',
+    grid: 'grid grid-cols-2 gap-3',
+    pair: 'flex flex-col',
+    code: 'text-xs text-muted',
+    value: 'text-[15px] font-semibold tabular-nums text-text',
+    meta: 'text-[13px] text-muted',
   },
 
   list: {

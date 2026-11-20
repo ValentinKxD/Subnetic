@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Спільні схеми автентифікації: їх використовують і клієнт (валідація форм),
- * і сервер (валідація тіла запиту). Повідомлення — українською.
- */
+/** Спільні схеми автентифікації для клієнта й сервера */
 
 export const NICKNAME_MIN = 3;
 export const NICKNAME_MAX = 32;
@@ -54,11 +51,7 @@ const registerFields = z.object({
   confirmPassword: z.string().min(1, 'Повторіть пароль'),
 });
 
-/**
- * Звичайний `.refine` на об'єкті не запускається, поки невалідні окремі поля,
- * тож «Паролі не збігаються» з'являлося б лише після виправлення решти.
- * Тому перевіряємо поля та збіг паролів разом у superRefine.
- */
+/** superRefine, щоб «Паролі не збігаються» показувалось разом з іншими помилками */
 export const registerSchema = z
   .object({
     nickname: z.string(),
@@ -113,8 +106,8 @@ export type PublicUser = z.infer<typeof publicUserSchema>;
 /** Відповідь `GET /api/auth/me`. */
 export const meResponseSchema = z.object({ user: publicUserSchema });
 
-/** Відповідь `POST /api/auth/login` і `/register`. */
-export const authResponseSchema = z.object({ token: z.string().min(1), user: publicUserSchema });
+/** Відповідь `POST /api/auth/login` і `/register` (сам JWT — у httpOnly-куці, не в тілі). */
+export const authResponseSchema = z.object({ user: publicUserSchema });
 export type AuthResponse = z.infer<typeof authResponseSchema>;
 
 /** Формат помилки API: загальне повідомлення + помилки окремих полів. */

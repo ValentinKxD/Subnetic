@@ -1,41 +1,22 @@
 import { Router } from 'express';
 import { profileSchema } from '../../../shared/auth.js';
 import { settingsPatchSchema } from '../../../shared/domain.js';
-import { findUserByEmail, findUserByNickname, getSettings, toPublicUser, updateUser } from '../data/store.js';
-import type { Settings, SettingsDTO } from '../data/types.js';
-import { authUser, validate } from './helpers.js';
-
-function toDTO(s: Settings): SettingsDTO {
-  return {
-    currency: s.currency,
-    theme: s.theme,
-    remind_7: s.remind_7,
-    remind_3: s.remind_3,
-    remind_1: s.remind_1,
-    remind_hour: s.remind_hour,
-    telegram: {
-      linked: s.telegram_username !== null,
-      username: s.telegram_username,
-      linked_at: s.telegram_linked_at,
-    },
-  };
-}
+import { authUser } from '../auth/session.js';
+import { toPublicUser, updateProfile } from '../services/auth.js';
+import { parse } from '../services/errors.js';
+import { patchSettings, readSettings } from '../services/settings.js';
+import { createLinkUrl, sendNearestReminder, sendTestMessage, unlink } from '../services/telegram.js';
 
 // ── /api/settings ───────────────────────────────────────────
 
 export const settingsRouter = Router();
 
 settingsRouter.get('/', (req, res) => {
-  res.json(toDTO(getSettings(authUser(req).id)));
+  res.json(readSettings(authUser(req).id));
 });
 
 settingsRouter.patch('/', (req, res) => {
-  const user = authUser(req);
-  const data = validate(settingsPatchSchema, req.body, res);
-  if (!data) return;
-  const s = getSettings(user.id);
-  Object.assign(s, data);
-  res.json(toDTO(s));
+  res.json(patchSettings(authUser(req).id, parse(settingsPatchSchema, req.body)));
 });
 
 // ── /api/profile ────────────────────────────────────────────
@@ -43,50 +24,27 @@ settingsRouter.patch('/', (req, res) => {
 export const profileRouter = Router();
 
 profileRouter.patch('/', (req, res) => {
-  const user = authUser(req);
-  const data = validate(profileSchema, req.body, res);
-  if (!data) return;
-
-  const fields: Record<string, string> = {};
-  const byNick = findUserByNickname(data.nickname);
-  if (byNick && byNick.id !== user.id) fields.nickname = 'Цей нікнейм уже зайнятий';
-  const byEmail = findUserByEmail(data.email);
-  if (byEmail && byEmail.id !== user.id) fields.email = 'Акаунт з таким email уже існує';
-  if (Object.keys(fields).length > 0) {
-    res.status(409).json({ error: 'Дані вже використовуються', fields });
-    return;
-  }
-
-  const updated = updateUser(user.id, { nickname: data.nickname, email: data.email, phone: data.phone ?? null });
-  res.json({ user: updated ? toPublicUser(updated) : null });
+  const user = updateProfile(authUser(req).id, parse(profileSchema, req.body));
+  res.json({ user: toPublicUser(user) });
 });
 
-// ── /api/telegram (заглушки) ────────────────────────────────
+// ── /api/telegram (сам бот — у папці bot/) ──────────────────
 
 export const telegramRouter = Router();
 
-/** ЗАГЛУШКА: повертає фейкове посилання на бота й одразу позначає акаунт прив'язаним. */
 telegramRouter.post('/link', (req, res) => {
-  const user = authUser(req);
-  const s = getSettings(user.id);
-  const code = Math.random().toString(36).slice(2, 10);
-  s.telegram_username = `@${user.nickname}`;
-  s.telegram_linked_at = new Date().toISOString();
-  res.json({ url: `https://t.me/subnetic_demo_bot?start=${code}`, settings: toDTO(s) });
+  res.json(createLinkUrl(authUser(req).id));
 });
 
 telegramRouter.post('/unlink', (req, res) => {
-  const s = getSettings(authUser(req).id);
-  s.telegram_username = null;
-  s.telegram_linked_at = null;
-  res.json({ settings: toDTO(s) });
+  res.json(unlink(authUser(req).id));
 });
 
-telegramRouter.post('/test', (req, res) => {
-  const s = getSettings(authUser(req).id);
-  if (!s.telegram_username) {
-    res.status(409).json({ error: 'Спершу прив’яжіть Telegram' });
-    return;
-  }
-  res.json({ ok: true, message: `Тестове повідомлення надіслано в ${s.telegram_username} (демо: насправді нічого не відправлено).` });
+telegramRouter.post('/test', async (req, res) => {
+  res.json(await sendTestMessage(authUser(req).id));
+});
+
+/** Нагадування про найближчий платіж — надіслати в Telegram прямо зараз. */
+telegramRouter.post('/remind-now', async (req, res) => {
+  res.json(await sendNearestReminder(authUser(req).id));
 });

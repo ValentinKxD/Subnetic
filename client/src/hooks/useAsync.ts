@@ -10,10 +10,7 @@ export interface AsyncState<T> {
   reload: () => void;
 }
 
-/**
- * Базовий хук запиту: завантажує дані при зміні `deps`, скасовує застарілі запити,
- * тримає попередні дані під час оновлення (без «миготіння» спінера).
- */
+/** Запит даних зі скасуванням застарілих запитів */
 export function useAsync<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: DependencyList): AsyncState<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);

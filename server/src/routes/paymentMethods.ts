@@ -1,45 +1,26 @@
 import { Router } from 'express';
 import { paymentMethodInputSchema } from '../../../shared/domain.js';
-import {
-  createPaymentMethod,
-  deletePaymentMethod,
-  listPaymentMethods,
-  updatePaymentMethod,
-} from '../data/store.js';
-import type { PaymentMethod } from '../data/types.js';
-import { authUser, idParam, notFound, validate } from './helpers.js';
+import { authUser } from '../auth/session.js';
+import { parse } from '../services/errors.js';
+import { createMethod, listMethods, removeMethod, updateMethod } from '../services/paymentMethods.js';
+import { idParam } from './helpers.js';
 
 export const paymentMethodsRouter = Router();
 
-const toDTO = ({ user_id: _u, ...m }: PaymentMethod) => m;
-
 paymentMethodsRouter.get('/', (req, res) => {
-  const user = authUser(req);
-  res.json({ items: listPaymentMethods(user.id).map(toDTO) });
+  res.json(listMethods(authUser(req).id));
 });
 
 paymentMethodsRouter.post('/', (req, res) => {
-  const user = authUser(req);
-  const data = validate(paymentMethodInputSchema, req.body, res);
-  if (!data) return;
-  res.status(201).json(toDTO(createPaymentMethod(user.id, data)));
+  res.status(201).json(createMethod(authUser(req).id, parse(paymentMethodInputSchema, req.body)));
 });
 
 paymentMethodsRouter.patch('/:id', (req, res) => {
-  const user = authUser(req);
-  const id = idParam(req, res);
-  if (id === null) return;
-  const data = validate(paymentMethodInputSchema.partial(), req.body, res);
-  if (!data) return;
-  const m = updatePaymentMethod(user.id, id, data);
-  if (!m) return notFound(res, 'Спосіб оплати');
-  res.json(toDTO(m));
+  const id = idParam(req);
+  res.json(updateMethod(authUser(req).id, id, parse(paymentMethodInputSchema.partial(), req.body)));
 });
 
 paymentMethodsRouter.delete('/:id', (req, res) => {
-  const user = authUser(req);
-  const id = idParam(req, res);
-  if (id === null) return;
-  if (!deletePaymentMethod(user.id, id)) return notFound(res, 'Спосіб оплати');
+  removeMethod(authUser(req).id, idParam(req));
   res.status(204).end();
 });

@@ -1,9 +1,6 @@
 import type { BillingPeriod } from './money.js';
 
-/**
- * Дати як рядки 'YYYY-MM-DD' (без часових поясів) і місяці як 'YYYY-MM'.
- * Уся арифметика — в UTC, щоб не залежати від поясу машини.
- */
+/** Дати як рядки 'YYYY-MM-DD' (без часових поясів) і місяці як 'YYYY-MM' */
 
 export type ISODate = string;
 

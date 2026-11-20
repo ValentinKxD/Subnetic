@@ -1,5 +1,4 @@
 import type { ZodType, ZodTypeDef } from 'zod';
-import { clearToken, getToken } from '@/lib/token';
 
 /** Помилка відповіді API: HTTP-статус, загальне повідомлення та помилки полів `{error, fields}`. */
 export class ApiError extends Error {
@@ -24,10 +23,7 @@ export interface RequestOptions<T> {
   /** zod-схема для перевірки відповіді (рекомендовано). */
   schema?: ZodType<T, ZodTypeDef, unknown>;
   signal?: AbortSignal;
-  /**
-   * Не перенаправляти на /login при 401 (токен однаково очищається). Потрібно для
-   * запитів автентифікації (перевірка сесії, невдалий вхід), де 401 — очікувана відповідь.
-   */
+  /** Не перенаправляти на /login при 401 */
   skipAuthRedirect?: boolean;
 }
 
@@ -57,14 +53,12 @@ function redirectToLogin(): void {
   window.location.assign(`${LOGIN_PATH}?next=${next}`);
 }
 
-/** Єдина точка звернення до API: JSON, токен Bearer, обробка 401. */
+/** Єдина точка звернення до API: JSON, сесія в httpOnly-куці (браузер надсилає її сам), обробка 401. */
 export async function apiRequest<T>(path: string, options: RequestOptions<T> = {}): Promise<T> {
   const { method = 'GET', body, schema, signal, skipAuthRedirect = false } = options;
 
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const token = getToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
 
   let res: Response;
   try {
@@ -72,6 +66,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions<T> = {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      credentials: 'same-origin',
       signal,
     });
   } catch (e) {
@@ -90,8 +85,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions<T> = {
   }
 
   if (res.status === 401) {
-    // Токен недійсний (вийшли, сервер перезапустився тощо) — прибираємо його.
-    clearToken();
+    // Сесії немає або вона минула — сервер уже прибрав куку.
     if (!skipAuthRedirect) redirectToLogin();
     throw new ApiError(401, extractMessage(data, 'Потрібна авторизація'), extractFields(data), data);
   }

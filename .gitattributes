@@ -1,0 +1,3 @@
+# Скрипти для Linux-контейнерів мають лишатися з LF, навіть якщо git на Windows конвертує переноси.
+*.sh text eol=lf
+Dockerfile text eol=lf

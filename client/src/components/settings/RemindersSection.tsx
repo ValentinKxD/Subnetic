@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { settingsPatchSchema, type SettingsPatch } from '@shared/domain';
-import { BellIcon, Field, Select, Switch } from '@/components/ui';
+import { sendReminderNow } from '@/api/endpoints';
+import { Alert, BellIcon, Button, Field, Select, SendIcon, Switch } from '@/components/ui';
 import { useSaveState } from '@/hooks/useSaveState';
 import { useSettings } from '@/hooks/SettingsContext';
 import type { Settings } from '@/lib/types';
@@ -30,6 +32,24 @@ export function RemindersSection({ settings }: { settings: Settings }) {
 
   const anyOn = settings.remind_7 || settings.remind_3 || settings.remind_1;
 
+  const [sending, setSending] = useState(false);
+  const [notice, setNotice] = useState<{ variant: 'success' | 'error'; text: string } | null>(null);
+  const tg = settings.telegram;
+  const canSend = tg.configured && tg.linked;
+
+  async function sendNow() {
+    setSending(true);
+    setNotice(null);
+    try {
+      const r = await sendReminderNow();
+      setNotice({ variant: 'success', text: r.message });
+    } catch (e) {
+      setNotice({ variant: 'error', text: e instanceof Error ? e.message : 'Не вдалося надіслати нагадування' });
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
     <SettingsSection
       icon={<BellIcon size={20} />}
@@ -52,6 +72,24 @@ export function RemindersSection({ settings }: { settings: Settings }) {
           />
         )}
       </Field>
+
+      {notice && <Alert variant={notice.variant}>{notice.text}</Alert>}
+
+      <div className={ui.field.wrapper}>
+        <div>
+          <Button variant="secondary" loading={sending} disabled={!canSend || sending} onClick={sendNow}>
+            <SendIcon />
+            Надіслати нагадування зараз
+          </Button>
+        </div>
+        <p className={ui.hint}>
+          {canSend
+            ? 'Про найближчий платіж — у Telegram одразу, не чекаючи запланованого часу.'
+            : tg.configured
+              ? 'Спершу привʼяжіть Telegram у блоці «Telegram-сповіщення».'
+              : 'Telegram-бот не налаштований на сервері.'}
+        </p>
+      </div>
     </SettingsSection>
   );
 }

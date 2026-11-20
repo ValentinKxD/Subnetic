@@ -15,10 +15,7 @@ export interface MenuProps {
   items: MenuItem[];
 }
 
-/**
- * Випадне меню дій (кнопка-іконка 40×40).
- * Клавіатура: Enter/Space/↓ відкривають, ↑/↓ — перехід, Esc — закрити, Tab — вийти.
- */
+/** Випадне меню дій (кнопка-іконка 40×40) */
 export function Menu({ label, icon, items }: MenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);

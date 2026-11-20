@@ -12,10 +12,7 @@ interface PageStateProps<T> {
   children: (data: T) => ReactNode;
 }
 
-/**
- * Типові стани сторінки/блоку: завантаження → помилка (з «Спробувати знову») → дані.
- * Якщо дані вже є, а оновлення впало — показуємо дані (помилку покаже сам блок, якщо треба).
- */
+/** Типові стани сторінки/блоку: завантаження → помилка (з «Спробувати знову») → дані */
 export function PageState<T>({ data, loading, error, onRetry, loadingLabel = 'Завантаження', children }: PageStateProps<T>) {
   if (loading) {
     return (

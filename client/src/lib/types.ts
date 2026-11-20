@@ -8,10 +8,7 @@ import {
   themeSchema,
 } from '@shared/domain';
 
-/**
- * zod-схеми і типи відповідей API. Відповіді перевіряються під час виконання,
- * тому розбіжність клієнта й сервера одразу видно як помилку, а не як «тихі» undefined.
- */
+/** zod-схеми і типи відповідей API */
 
 export type {
   PaymentMethodType,
@@ -64,7 +61,12 @@ export const createdPlanSchema = z.object({ id: z.number(), service_id: z.number
 export const ratesSchema = z.object({
   base: z.literal('UAH'),
   rates: z.object({ UAH: z.number(), USD: z.number(), EUR: z.number() }),
-  updated_at: z.string(),
+  /** Дата курсу НБУ (YYYY-MM-DD). */
+  rate_date: z.string().nullable(),
+  /** Коли сервер отримав курс (ISO 8601). */
+  updated_at: z.string().nullable(),
+  /** 'nbu' — курс НБУ; 'seed' — резервний, якщо НБУ ще не був доступний. */
+  source: z.enum(['nbu', 'seed']),
 });
 
 // ── Підписки ────────────────────────────────────────────────
@@ -202,10 +204,17 @@ export const settingsResponseSchema = z.object({
   remind_3: z.boolean(),
   remind_1: z.boolean(),
   remind_hour: z.number(),
-  telegram: z.object({ linked: z.boolean(), username: z.string().nullable(), linked_at: z.string().nullable() }),
+  telegram: z.object({
+    /** Бот налаштований на сервері (TELEGRAM_BOT_TOKEN і TELEGRAM_BOT_NAME). */
+    configured: z.boolean(),
+    bot_name: z.string().nullable(),
+    linked: z.boolean(),
+    username: z.string().nullable(),
+    linked_at: z.string().nullable(),
+  }),
 });
 
-export const telegramLinkSchema = z.object({ url: z.string(), settings: settingsResponseSchema });
+export const telegramLinkSchema = z.object({ url: z.string(), expires_at: z.string(), settings: settingsResponseSchema });
 export const telegramSettingsSchema = z.object({ settings: settingsResponseSchema });
 export const telegramTestSchema = z.object({ ok: z.boolean(), message: z.string() });
 

@@ -20,11 +20,7 @@ interface SettingsContextValue {
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
-/**
- * Налаштування користувача для захищеної частини застосунку.
- * Тема з сервера має пріоритет над localStorage; перемикання теми зберігається в обох.
- * Зміна валюти змінює `currency`, і хуки даних перезавантажуються з новою валютою.
- */
+/** Налаштування користувача для захищеної частини застосунку */
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { setTheme: applyTheme } = useTheme();
   const [settings, setSettings] = useState<Settings | null>(null);

@@ -1,11 +1,11 @@
 import { getRates } from '@/api/endpoints';
-import { Field, GlobeIcon, InfoIcon, Select } from '@/components/ui';
+import { Field, GlobeIcon, Select } from '@/components/ui';
 import { useAsync } from '@/hooks/useAsync';
 import { useSaveState } from '@/hooks/useSaveState';
 import { useSettings } from '@/hooks/SettingsContext';
-import { currencyLabels, formatMoney } from '@/lib/format';
+import { currencyLabels } from '@/lib/format';
 import type { Currency, Settings, Theme } from '@/lib/types';
-import { ui } from '@/lib/ui';
+import { RatesInfo } from './RatesInfo';
 import { SettingsSection } from './SettingsSection';
 
 const CURRENCY_OPTIONS = (Object.keys(currencyLabels) as Currency[]).map((c) => ({ value: c, label: currencyLabels[c] }));
@@ -32,6 +32,7 @@ export function AppearanceSection({ settings }: { settings: Settings }) {
           />
         )}
       </Field>
+      <RatesInfo rates={rates.data} loading={rates.loading} error={rates.error !== null} />
       <Field label="Тема">
         {(c) => (
           <Select
@@ -42,16 +43,6 @@ export function AppearanceSection({ settings }: { settings: Settings }) {
           />
         )}
       </Field>
-      <p className={ui.list.cell}>
-        <span className={ui.hint}>
-          <InfoIcon />
-        </span>
-        <span className={ui.hint}>
-          {rates.data
-            ? `Фіксовані курси (заглушка): 1 $ = ${formatMoney(rates.data.rates.USD, 'UAH')}, 1 € = ${formatMoney(rates.data.rates.EUR, 'UAH')}. Ціни в інших валютах перераховуються автоматично.`
-            : 'Ціни в інших валютах перераховуються автоматично за курсом.'}
-        </span>
-      </p>
     </SettingsSection>
   );
 }

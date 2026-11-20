@@ -85,10 +85,7 @@ function PaymentDayButton({ day, modifiers, className, ...buttonProps }: DayButt
   );
 }
 
-/**
- * Календар платежів місяця на react-day-picker, стилізований токенами теми.
- * Сплачені, очікувані, прострочені та кінець пробного мають різний колір і різні підписи для скрінрідера.
- */
+/** Календар платежів місяця на react-day-picker, стилізований токенами теми */
 export function PaymentCalendar({ month, onMonthChange, items, selected, onSelect }: PaymentCalendarProps) {
   const byDate = useMemo(() => {
     const map = new Map<string, CalendarItem[]>();

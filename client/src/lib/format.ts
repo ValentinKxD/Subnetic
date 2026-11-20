@@ -67,6 +67,26 @@ export function formatMoneyRounded(amount: number, currency: Currency): string {
   return formatMoney(Math.round(amount), currency);
 }
 
+const rateFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+
+/** Курс валюти з точністю НБУ: 45,0532 ₴. */
+export function formatRate(rate: number): string {
+  return `${rateFormatter.format(rate)} ₴`;
+}
+
+/** 19 лис 2026, 16:42 — момент часу (ISO 8601) у локальному поясі. */
+export function formatDateTime(iso: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const date = new Intl.DateTimeFormat('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })
+    .format(d)
+    .replace(' р.', '')
+    .replace('.', '');
+  const time = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' }).format(d);
+  return `${date}, ${time}`;
+}
+
 function toDate(iso: string): Date {
   return new Date(`${iso.slice(0, 10)}T00:00:00`);
 }

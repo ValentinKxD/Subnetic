@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { DEFAULT_RATES } from '../../../shared/money.js';
+import { getCurrentRates } from '../db/rates.js';
 
 export const ratesRouter = Router();
 
-/** ЗАГЛУШКА: фіксовані курси (скільки гривень за одиницю валюти). */
+/** Актуальні курси: скільки гривень за одиницю валюти */
 ratesRouter.get('/', (_req, res) => {
-  res.json({ base: 'UAH', rates: DEFAULT_RATES, updated_at: new Date().toISOString().slice(0, 10) });
+  const { rates, rate_date, updated_at, source } = getCurrentRates();
+  res.json({ base: 'UAH', rates, rate_date, updated_at, source });
 });

@@ -3,11 +3,7 @@ import type { z } from 'zod';
 import { fieldErrors } from '@shared/auth';
 import { ApiError } from '@/api/client';
 
-/**
- * Невеликий хук форм на zod.
- * - Помилки поля показуються після blur або першої спроби відправки, далі оновлюються наживо.
- * - Помилки сервера `{error, fields}` показуються під полями і зникають, коли поле змінюють.
- */
+/** Невеликий хук форм на zod */
 export function useZodForm<S extends z.ZodTypeAny>(
   schema: S,
   initial: z.input<S>,

@@ -122,3 +122,4 @@ export async function patchProfile(data: ProfileData): Promise<PublicUser> {
 export const linkTelegram = () => api.post('/telegram/link', undefined, { schema: telegramLinkSchema });
 export const unlinkTelegram = () => api.post('/telegram/unlink', undefined, { schema: telegramSettingsSchema });
 export const testTelegram = () => api.post('/telegram/test', undefined, { schema: telegramTestSchema });
+export const sendReminderNow = () => api.post('/telegram/remind-now', undefined, { schema: telegramTestSchema });

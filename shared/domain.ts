@@ -2,10 +2,7 @@ import { z } from 'zod';
 import { isISODate } from './dates.js';
 import { BILLING_PERIODS, CURRENCIES } from './money.js';
 
-/**
- * Спільні zod-схеми домену: тіла запитів API (сервер валідує ними вхід,
- * клієнт — перед відправкою). Повідомлення українською.
- */
+/** Спільні zod-схеми тіл запитів API */
 
 export const currencySchema = z.enum(CURRENCIES);
 export const billingPeriodSchema = z.enum(BILLING_PERIODS);

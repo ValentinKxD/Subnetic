@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.vite
+**/.env
+**/.env.*
+!**/.env.example
+server/data
+bot/venv
+**/__pycache__
+**/*.pyc
+.git
+docs
+*.log
+*.bat

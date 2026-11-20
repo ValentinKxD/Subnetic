@@ -1,26 +1,28 @@
 import { addPeriod, todayISO } from '../../../shared/dates.js';
-import { convert, round2, type Currency } from '../../../shared/money.js';
-import { listPayments, listSubscriptions, paymentMethodLabel } from '../data/store.js';
-import type { CalendarItem, Payment, PaymentDTO, Subscription } from '../data/types.js';
-import { isBillable, planAndService } from './subscriptions.js';
+import type { z } from 'zod';
+import type { paymentHistoryQuerySchema } from '../../../shared/domain.js';
+import { round2 } from '../../../shared/money.js';
+import { listPayments } from '../db/payments.js';
+import { listSubscriptionDetails } from '../db/subscriptions.js';
+import type { CalendarItem, PaymentDetails, PaymentDTO, SubscriptionDetails, UserContext } from '../types.js';
+import { toUserCurrency } from './context.js';
+import { isBillable } from './subscriptions.js';
 
-/**
- * Графік платежів. Майбутні платежі НЕ зберігаються — їх обчислюємо
- * з next_payment_date і періоду тарифу. Минулі беруться з таблиці платежів.
- */
+/** Графік платежів: майбутні дати обчислюються з next_payment_date */
 
 /** Обчислені очікувані списання підписки в межах [from, to]. */
-export function expectedForSubscription(sub: Subscription, from: string, to: string, currency: Currency): CalendarItem[] {
+export function expectedForSubscription(
+  sub: SubscriptionDetails,
+  from: string,
+  to: string,
+  ctx: UserContext,
+): CalendarItem[] {
   if (!isBillable(sub) || !sub.next_payment_date) return [];
-  const ps = planAndService(sub);
-  if (!ps) return [];
-  const { plan, service } = ps;
   const today = todayISO();
   const items: CalendarItem[] = [];
 
   let d = sub.next_payment_date;
   let first = true;
-  // Без автопродовження списань після найближчого немає.
   while (d <= to) {
     if (d >= from) {
       items.push({
@@ -28,39 +30,44 @@ export function expectedForSubscription(sub: Subscription, from: string, to: str
         kind: 'expected',
         date: d,
         subscription_id: sub.id,
-        service: { name: service.name, icon: service.icon, brand_color: service.brand_color },
-        plan_name: plan.name,
-        billing_period: plan.billing_period,
-        amount: plan.price,
-        currency: plan.currency,
-        converted_amount: round2(convert(plan.price, plan.currency, currency)),
-        payment_method: paymentMethodLabel(sub.user_id, sub.payment_method_id),
+        service: { name: sub.service.name, icon: sub.service.icon ?? '', brand_color: sub.service.brand_color },
+        plan_name: sub.plan.name,
+        billing_period: sub.plan.billing_period,
+        amount: sub.plan.price,
+        currency: sub.plan.currency,
+        converted_amount: toUserCurrency(ctx, sub.plan.price, sub.plan.currency),
+        payment_method: sub.payment_method_label,
         payment_status: null,
         overdue: d < today,
         trial_end: first && sub.status === 'trial',
         payable: first,
       });
     }
+    // Без автопродовження списань після найближчого немає.
     if (!sub.auto_renew) break;
-    d = addPeriod(d, plan.billing_period);
+    d = addPeriod(d, sub.plan.billing_period);
     first = false;
   }
   return items;
 }
 
-export function paymentToItem(p: Payment, currency: Currency): CalendarItem {
+function paymentService(p: PaymentDetails) {
+  return { name: p.service_name, icon: p.service_icon ?? '', brand_color: p.brand_color };
+}
+
+export function paymentToItem(p: PaymentDetails, ctx: UserContext): CalendarItem {
   return {
     key: `p-${p.id}`,
     kind: 'paid',
     date: p.due_date,
     subscription_id: p.subscription_id,
-    service: { name: p.service_name, icon: p.service_icon, brand_color: p.brand_color },
+    service: paymentService(p),
     plan_name: p.plan_name,
     billing_period: p.billing_period,
     amount: p.amount,
     currency: p.currency,
-    converted_amount: round2(convert(p.amount, p.currency, currency)),
-    payment_method: p.payment_method,
+    converted_amount: toUserCurrency(ctx, p.amount, p.currency),
+    payment_method: p.payment_method_label,
     payment_status: p.status,
     overdue: false,
     trial_end: false,
@@ -68,7 +75,7 @@ export function paymentToItem(p: Payment, currency: Currency): CalendarItem {
   };
 }
 
-export function paymentToDTO(p: Payment, currency: Currency): PaymentDTO {
+export function paymentToDTO(p: PaymentDetails, ctx: UserContext): PaymentDTO {
   return {
     id: p.id,
     subscription_id: p.subscription_id,
@@ -77,21 +84,27 @@ export function paymentToDTO(p: Payment, currency: Currency): PaymentDTO {
     status: p.status,
     amount: p.amount,
     currency: p.currency,
-    converted_amount: round2(convert(p.amount, p.currency, currency)),
-    service: { name: p.service_name, icon: p.service_icon, brand_color: p.brand_color },
+    converted_amount: toUserCurrency(ctx, p.amount, p.currency),
+    service: paymentService(p),
     plan_name: p.plan_name,
     billing_period: p.billing_period,
-    payment_method: p.payment_method,
+    payment_method: p.payment_method_label,
   };
 }
 
-/** Усі платежі (минулі + обчислені майбутні) у діапазоні дат, відсортовані за датою. */
-export function scheduleBetween(userId: number, from: string, to: string, currency: Currency): CalendarItem[] {
-  const past = listPayments(userId)
-    .filter((p) => p.due_date >= from && p.due_date <= to)
-    .map((p) => paymentToItem(p, currency));
-  const future = listSubscriptions(userId).flatMap((s) => expectedForSubscription(s, from, to, currency));
-  return [...past, ...future].sort((a, b) => a.date.localeCompare(b.date) || a.service.name.localeCompare(b.service.name, 'uk'));
+const byDateThenName = (a: CalendarItem, b: CalendarItem) =>
+  a.date.localeCompare(b.date) || a.service.name.localeCompare(b.service.name, 'uk');
+
+/** Платежі в діапазоні: минулі з БД + обчислені майбутні, відсортовані за датою */
+export function scheduleBetween(
+  ctx: UserContext,
+  from: string,
+  to: string,
+  subs: SubscriptionDetails[] = listSubscriptionDetails(ctx.userId),
+): CalendarItem[] {
+  const past = listPayments(ctx.userId, { from, to }).map((p) => paymentToItem(p, ctx));
+  const future = subs.flatMap((s) => expectedForSubscription(s, from, to, ctx));
+  return [...past, ...future].sort(byDateThenName);
 }
 
 /** Сума «сплачено» (лише успішні) і «очікується» в наборі елементів. */
@@ -105,13 +118,34 @@ export function summarize(items: CalendarItem[]): { paid: number; expected: numb
   return { paid: round2(paid), expected: round2(expected) };
 }
 
-/** Найближчий очікуваний платіж серед усіх підписок (включно з простроченими). */
-export function nextPayment(userId: number, currency: Currency): CalendarItem | null {
+/** Лише найближчий очікуваний платіж серед усіх підписок (включно з простроченим). */
+export function nextPayment(ctx: UserContext, subs: SubscriptionDetails[]): CalendarItem | null {
   let best: CalendarItem | null = null;
-  for (const s of listSubscriptions(userId)) {
+  for (const s of subs) {
     if (!isBillable(s) || !s.next_payment_date) continue;
-    const [first] = expectedForSubscription(s, '0000-01-01', s.next_payment_date, currency);
-    if (first && (!best || first.date < best.date)) best = first;
+    const [first] = expectedForSubscription(s, s.next_payment_date, s.next_payment_date, ctx);
+    if (first && (!best || byDateThenName(first, best) < 0)) best = first;
   }
   return best;
+}
+
+/** Історія здійснених платежів з фільтрами і сумою успішних. */
+export function paymentHistory(ctx: UserContext, query: z.output<typeof paymentHistoryQuerySchema>) {
+  const q = query.q?.toLocaleLowerCase('uk');
+  const items = listPayments(ctx.userId, {
+    from: query.from,
+    to: query.to,
+    status: query.status,
+    subscription_id: query.subscription_id,
+  })
+    .filter(
+      (p) =>
+        !q ||
+        p.service_name.toLocaleLowerCase('uk').includes(q) ||
+        p.plan_name.toLocaleLowerCase('uk').includes(q),
+    )
+    .map((p) => paymentToDTO(p, ctx));
+
+  const total = round2(items.filter((p) => p.status === 'paid').reduce((s, p) => s + p.converted_amount, 0));
+  return { items, total, currency: ctx.currency };
 }

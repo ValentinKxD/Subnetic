@@ -13,10 +13,7 @@ export interface ModalProps {
   size?: 'md' | 'lg';
 }
 
-/**
- * Модальне вікно на нативному <dialog>: фокус-пастка, Esc і затемнення — з коробки.
- * Закривається кнопкою ×, клавішею Esc або кліком по фону.
- */
+/** Модальне вікно на нативному <dialog>: фокус-пастка, Esc і затемнення — з коробки */
 export function Modal({ open, onClose, title, children, footer, size = 'md' }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();

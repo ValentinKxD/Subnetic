@@ -1,9 +1,9 @@
-import type { PaymentMethodType, PaymentStatus, SubscriptionStatus, Theme } from '../../../shared/domain.js';
-import type { BillingPeriod, Currency } from '../../../shared/money.js';
+import type { PaymentMethodType, PaymentStatus, SubscriptionStatus, Theme } from '../../shared/domain.js';
+import type { BillingPeriod, Currency, Rates } from '../../shared/money.js';
 
-export type { BillingPeriod, Currency, PaymentMethodType, PaymentStatus, SubscriptionStatus, Theme };
+export type { BillingPeriod, Currency, PaymentMethodType, PaymentStatus, Rates, SubscriptionStatus, Theme };
 
-// ── Збережені сутності (in-memory «таблиці») ────────────────
+// ── Сутності (як їх повертає шар db, булеві поля вже перетворені з 0/1) ──
 
 export interface Category {
   id: number;
@@ -14,23 +14,23 @@ export interface Category {
 export interface Service {
   id: number;
   category_id: number;
-  name: string;
-  /** Шлях до іконки в client/public/icons, напр. "/icons/netflix.svg"; '' — без іконки. */
-  icon: string;
-  brand_color: string;
-  website: string;
   /** null — глобальний каталог; id користувача — власний сервіс. */
-  owner_id: number | null;
+  owner_user_id: number | null;
+  name: string;
+  icon: string | null;
+  brand_color: string;
+  website: string | null;
 }
 
 export interface Plan {
   id: number;
   service_id: number;
+  /** null — глобальний тариф; id користувача — власний. */
+  user_id: number | null;
   name: string;
   price: number;
   currency: Currency;
   billing_period: BillingPeriod;
-  owner_id: number | null;
 }
 
 export interface User {
@@ -38,51 +38,11 @@ export interface User {
   nickname: string;
   email: string;
   phone: string | null;
-  /** ЗАГЛУШКА: пароль зберігається відкритим текстом. На реальному бекенді — SHA-256-хеш. */
-  password: string;
+  password_hash: string;
+  telegram_chat_id: number | null;
+  telegram_username: string | null;
+  telegram_linked_at: string | null;
   created_at: string;
-}
-
-export interface PaymentMethod {
-  id: number;
-  user_id: number;
-  type: PaymentMethodType;
-  label: string;
-  details: string;
-  is_default: boolean;
-}
-
-export interface Subscription {
-  id: number;
-  user_id: number;
-  plan_id: number;
-  status: SubscriptionStatus;
-  start_date: string;
-  trial_end_date: string | null;
-  next_payment_date: string | null;
-  auto_renew: boolean;
-  payment_method_id: number | null;
-  created_at: string;
-}
-
-/** Здійснений платіж. Назви знімаються в момент оплати, щоб історія пережила видалення підписки. */
-export interface Payment {
-  id: number;
-  user_id: number;
-  subscription_id: number | null;
-  amount: number;
-  currency: Currency;
-  /** Дата, за яку платіж (дата списання за графіком). */
-  due_date: string;
-  /** Коли позначено оплаченим. */
-  paid_at: string;
-  status: PaymentStatus;
-  service_name: string;
-  service_icon: string;
-  brand_color: string;
-  plan_name: string;
-  billing_period: BillingPeriod;
-  payment_method: string | null;
 }
 
 export interface Settings {
@@ -93,11 +53,65 @@ export interface Settings {
   remind_3: boolean;
   remind_1: boolean;
   remind_hour: number;
-  telegram_username: string | null;
-  telegram_linked_at: string | null;
 }
 
-// ── Відповіді API ───────────────────────────────────────────
+export interface PaymentMethod {
+  id: number;
+  user_id: number;
+  type: PaymentMethodType;
+  /** Колонка title. */
+  label: string;
+  details: string;
+  is_default: boolean;
+}
+
+export interface Subscription {
+  id: number;
+  user_id: number;
+  plan_id: number;
+  payment_method_id: number | null;
+  status: SubscriptionStatus;
+  start_date: string;
+  trial_end_date: string | null;
+  next_payment_date: string | null;
+  auto_renew: boolean;
+  cancelled_at: string | null;
+  note: string | null;
+}
+
+/** Підписка разом із тарифом, сервісом, категорією та назвою способу оплати (один JOIN). */
+export interface SubscriptionDetails extends Subscription {
+  plan: Plan;
+  service: Service;
+  category_name: string;
+  payment_method_label: string | null;
+}
+
+/** Платіж із назвами сервісу/тарифу (через підписку). */
+export interface PaymentDetails {
+  id: number;
+  subscription_id: number;
+  amount: number;
+  currency: Currency;
+  due_date: string;
+  status: PaymentStatus;
+  paid_at: string;
+  service_name: string;
+  service_icon: string | null;
+  brand_color: string;
+  plan_name: string;
+  billing_period: BillingPeriod;
+  payment_method_label: string | null;
+}
+
+/** Що потрібно сервісам про поточного користувача: валюта відображення і курси. */
+export interface UserContext {
+  userId: number;
+  currency: Currency;
+  rates: Rates;
+}
+
+// ── Відповіді API (формати, які очікує клієнт) ──────────────
 
 export interface ServiceRef {
   id: number;
@@ -115,13 +129,7 @@ export interface SubscriptionDTO {
   trial_end_date: string | null;
   next_payment_date: string | null;
   auto_renew: boolean;
-  plan: {
-    id: number;
-    name: string;
-    price: number;
-    currency: Currency;
-    billing_period: BillingPeriod;
-  };
+  plan: { id: number; name: string; price: number; currency: Currency; billing_period: BillingPeriod };
   service: ServiceRef;
   payment_method_id: number | null;
   payment_method: string | null;
@@ -132,15 +140,30 @@ export interface SubscriptionDTO {
   display_currency: Currency;
 }
 
+export interface CatalogPlanDTO {
+  id: number;
+  name: string;
+  price: number;
+  currency: Currency;
+  billing_period: BillingPeriod;
+  is_custom: boolean;
+}
+
+export interface CatalogServiceDTO {
+  id: number;
+  category_id: number;
+  category: string;
+  name: string;
+  icon: string;
+  brand_color: string;
+  website: string;
+  is_custom: boolean;
+  plans: CatalogPlanDTO[];
+}
+
 export interface CatalogDTO {
   categories: Category[];
-  services: Array<
-    Omit<Service, 'owner_id'> & {
-      category: string;
-      is_custom: boolean;
-      plans: Array<Omit<Plan, 'service_id' | 'owner_id'> & { is_custom: boolean }>;
-    }
-  >;
+  services: CatalogServiceDTO[];
 }
 
 export type CalendarItemKind = 'paid' | 'expected';
@@ -183,6 +206,14 @@ export interface PaymentDTO {
   payment_method: string | null;
 }
 
+export interface PaymentMethodDTO {
+  id: number;
+  type: PaymentMethodType;
+  label: string;
+  details: string;
+  is_default: boolean;
+}
+
 export interface SettingsDTO {
   currency: Currency;
   theme: Theme;
@@ -190,5 +221,14 @@ export interface SettingsDTO {
   remind_3: boolean;
   remind_1: boolean;
   remind_hour: number;
-  telegram: { linked: boolean; username: string | null; linked_at: string | null };
+  telegram: {
+    /** Чи задано на сервері TELEGRAM_BOT_TOKEN і TELEGRAM_BOT_NAME. */
+    configured: boolean;
+    /** Ім'я бота (без @) для показу; null, якщо бот не налаштований. */
+    bot_name: string | null;
+    /** Прив'язано, якщо бот записав telegram_chat_id. */
+    linked: boolean;
+    username: string | null;
+    linked_at: string | null;
+  };
 }

@@ -2,10 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type SaveState = { kind: 'idle' } | { kind: 'saving' } | { kind: 'saved'; message: string } | { kind: 'error'; message: string };
 
-/**
- * Стан «миттєвого збереження» (перемикачі, select-и в налаштуваннях):
- * saving → saved (зникає за 2.5 с) або error з повідомленням.
- */
+/** Стан миттєвого збереження: saving → saved → idle */
 export function useSaveState() {
   const [state, setState] = useState<SaveState>({ kind: 'idle' });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
