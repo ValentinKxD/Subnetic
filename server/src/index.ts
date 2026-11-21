@@ -3,8 +3,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import express, { type NextFunction, type Request, type Response } from 'express';
-import { requireAuth } from './auth/session.js';
+import { requireAdmin, requireAuth } from './auth/session.js';
 import { closeDb, DB_PATH, getDb } from './db/index.js';
+import { adminRouter } from './routes/admin.js';
 import { authRouter } from './routes/auth.js';
 import { catalogRouter } from './routes/catalog.js';
 import { dashboardRouter } from './routes/dashboard.js';
@@ -44,6 +45,7 @@ app.use('/api/payment-methods', requireAuth, paymentMethodsRouter);
 app.use('/api/settings', requireAuth, settingsRouter);
 app.use('/api/profile', requireAuth, profileRouter);
 app.use('/api/telegram', requireAuth, telegramRouter);
+app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 
 app.use('/api', (_req: Request, res: Response) => {
   res.status(404).json({ error: 'Не знайдено' });

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { loginSchema, type LoginData } from '@shared/auth';
 import { AuthCard } from '@/components/AuthLayout';
 import { useNextPath } from '@/components/RouteGuards';
@@ -12,6 +12,9 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const next = useNextPath();
+  // Сюди перенаправляє клієнт API, якщо адміністратор заблокував обліковий запис.
+  const [params] = useSearchParams();
+  const blocked = params.get('blocked') === '1';
 
   const onValid = useCallback(
     async (data: LoginData) => {
@@ -37,7 +40,11 @@ export function LoginPage() {
       }
     >
       <form noValidate onSubmit={form.handleSubmit} className={ui.field.form}>
-        {form.formError && <Alert variant="error">{form.formError}</Alert>}
+        {form.formError ? (
+          <Alert variant="error">{form.formError}</Alert>
+        ) : (
+          blocked && <Alert variant="error">Обліковий запис заблоковано адміністратором. Сесію завершено.</Alert>
+        )}
         <Field
           label="Email або нікнейм"
           name="identifier"

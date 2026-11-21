@@ -1,7 +1,8 @@
+import type { Role } from '../../shared/auth.js';
 import type { PaymentMethodType, PaymentStatus, SubscriptionStatus, Theme } from '../../shared/domain.js';
 import type { BillingPeriod, Currency, Rates } from '../../shared/money.js';
 
-export type { BillingPeriod, Currency, PaymentMethodType, PaymentStatus, Rates, SubscriptionStatus, Theme };
+export type { BillingPeriod, Currency, PaymentMethodType, PaymentStatus, Rates, Role, SubscriptionStatus, Theme };
 
 // ── Сутності (як їх повертає шар db, булеві поля вже перетворені з 0/1) ──
 
@@ -43,6 +44,9 @@ export interface User {
   telegram_username: string | null;
   telegram_linked_at: string | null;
   created_at: string;
+  role: Role;
+  /** Час блокування адміністратором; null — активний. */
+  blocked_at: string | null;
 }
 
 export interface Settings {

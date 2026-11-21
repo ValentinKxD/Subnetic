@@ -4,7 +4,7 @@ import { sql, transaction } from './index.js';
 /** Доступ до таблиць users, user_settings (створення) і telegram_link_tokens. */
 
 const COLUMNS = `id, nickname, email, phone, password_hash, telegram_chat_id, telegram_username,
-  telegram_linked_at, created_at`;
+  telegram_linked_at, created_at, role, blocked_at`;
 
 export function findUserById(id: number): User | undefined {
   return sql(`SELECT ${COLUMNS} FROM users WHERE id = ?`).get(id) as User | undefined;

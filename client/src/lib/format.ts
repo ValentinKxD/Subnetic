@@ -155,3 +155,29 @@ export function formatRelativeDays(iso: string, from: string = todayISO()): stri
 export function initials(nickname: string): string {
   return nickname.trim().slice(0, 2).toUpperCase();
 }
+
+/** «Пн» — короткий день тижня для підписів графіка. */
+export function formatWeekdayShort(iso: string): string {
+  const s = new Intl.DateTimeFormat('uk-UA', { weekday: 'short' }).format(toDate(iso));
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** 21.11 13:42 — компактний час події в журналі. */
+export function formatShortDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** 2,4 МБ */
+export function formatBytes(bytes: number): string {
+  const f = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1 });
+  if (bytes < 1024) return `${bytes} Б`;
+  if (bytes < 1024 * 1024) return `${f.format(bytes / 1024)} КБ`;
+  return `${f.format(bytes / 1024 / 1024)} МБ`;
+}
+
+export function usersWord(n: number): string {
+  return pluralize(n, { one: 'користувач', few: 'користувачі', many: 'користувачів' });
+}

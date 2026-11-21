@@ -73,6 +73,42 @@ function migrate(db: DB): void {
     })();
     console.log('Міграція БД: exchange_rates отримала rate_date і source.');
   }
+
+  // Адмін-панель: роль і блокування користувачів.
+  if (!hasColumn(db, 'users', 'role')) {
+    db.transaction(() => {
+      db.exec(`
+        ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'
+          CHECK (role IN ('user', 'admin'));
+        ALTER TABLE users ADD COLUMN blocked_at TEXT NULL
+          CHECK (blocked_at IS NULL OR blocked_at IS datetime(blocked_at));
+      `);
+    })();
+    console.log('Міграція БД: users отримала role і blocked_at.');
+  }
+
+  if (!hasTable(db, 'admin_log')) {
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE admin_log (
+          id         INTEGER PRIMARY KEY,
+          admin_id   INTEGER NULL REFERENCES users (id) ON DELETE SET NULL,
+          action     TEXT    NOT NULL,
+          details    TEXT    NULL,
+          created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX ix_admin_log_created ON admin_log (created_at DESC);
+      `);
+    })();
+    console.log('Міграція БД: створено таблицю admin_log.');
+  }
+}
+
+function hasTable(db: DB, name: string): boolean {
+  const row = db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) as {
+    n: number;
+  };
+  return row.n > 0;
 }
 
 let instance: DB | null = null;

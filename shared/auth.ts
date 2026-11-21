@@ -94,12 +94,20 @@ export type LoginInput = z.input<typeof loginSchema>;
 export type LoginData = z.output<typeof loginSchema>;
 export type ForgotPasswordInput = z.input<typeof forgotPasswordSchema>;
 
+export const ROLES = ['user', 'admin'] as const;
+export const roleSchema = z.enum(ROLES);
+export type Role = z.infer<typeof roleSchema>;
+
+/** Текст 403 для заблокованого облікового запису (клієнт за ним виходить із сесії). */
+export const BLOCKED_MESSAGE = 'Обліковий запис заблоковано';
+
 /** Публічні дані користувача, що повертає API. */
 export const publicUserSchema = z.object({
   id: z.number(),
   nickname: z.string(),
   email: z.string(),
   phone: z.string().nullable(),
+  role: roleSchema,
 });
 export type PublicUser = z.infer<typeof publicUserSchema>;
 

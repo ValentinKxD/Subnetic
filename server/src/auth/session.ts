@@ -1,5 +1,6 @@
 import type { CookieOptions, NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { BLOCKED_MESSAGE } from '../../../shared/auth.js';
 import { findUserById } from '../db/users.js';
 import type { User } from '../types.js';
 
@@ -55,7 +56,11 @@ function readUserId(req: Request): number | undefined {
   }
 }
 
-/** Middleware для захищених маршрутів: 401, якщо сесії немає або користувача вже не існує. */
+/**
+ * Middleware для захищених маршрутів: 401, якщо сесії немає або користувача вже не існує;
+ * 403 і завершення сесії, якщо обліковий запис заблоковано.
+ * Користувач читається з БД на кожному запиті, тож зміна ролі чи блокування діють одразу.
+ */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const userId = readUserId(req);
   const user = userId !== undefined ? findUserById(userId) : undefined;
@@ -64,7 +69,21 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     res.status(401).json({ error: 'Потрібна авторизація' });
     return;
   }
+  if (user.blocked_at !== null) {
+    endSession(res);
+    res.status(403).json({ error: BLOCKED_MESSAGE });
+    return;
+  }
   req.user = user;
+  next();
+}
+
+/** Ставиться після requireAuth: пропускає лише адміністраторів. */
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (req.user?.role !== 'admin') {
+    res.status(403).json({ error: 'Доступ лише для адміністратора' });
+    return;
+  }
   next();
 }
 

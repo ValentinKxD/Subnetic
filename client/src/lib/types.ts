@@ -218,6 +218,129 @@ export const telegramLinkSchema = z.object({ url: z.string(), expires_at: z.stri
 export const telegramSettingsSchema = z.object({ settings: settingsResponseSchema });
 export const telegramTestSchema = z.object({ ok: z.boolean(), message: z.string() });
 
+// ── Адмін-панель ────────────────────────────────────────────
+
+const roleSchema = z.enum(['user', 'admin']);
+
+export const adminLogEntrySchema = z.object({
+  id: z.number(),
+  action: z.string(),
+  details: z.string().nullable(),
+  created_at: z.string(),
+  admin_nickname: z.string().nullable(),
+});
+
+export const adminRateSchema = z.object({
+  currency: currencySchema,
+  rate: z.number(),
+  rate_date: z.string(),
+  source: z.enum(['nbu', 'seed']),
+  fetched_at: z.string(),
+});
+
+export const adminStatsSchema = z.object({
+  users: z.object({
+    total: z.number(),
+    new_30d: z.number(),
+    admins: z.number(),
+    blocked: z.number(),
+    telegram_linked: z.number(),
+  }),
+  subscriptions: z.object({ active: z.number(), per_user: z.number() }),
+  catalog: z.object({ categories: z.number(), services: z.number(), plans: z.number(), custom_services: z.number() }),
+  registrations: z.array(z.object({ date: z.string(), count: z.number() })),
+  top_services: z.array(
+    z.object({ id: z.number(), name: z.string(), icon: z.string(), brand_color: z.string(), subscriptions: z.number() }),
+  ),
+  rates: z.array(adminRateSchema),
+  reminders_today: z.number(),
+  database: z.object({ tables: z.number(), size_bytes: z.number(), journal_mode: z.string() }),
+  log: z.array(adminLogEntrySchema),
+});
+
+export const adminUserSchema = z.object({
+  id: z.number(),
+  nickname: z.string(),
+  email: z.string(),
+  role: roleSchema,
+  telegram_linked: z.boolean(),
+  telegram_username: z.string().nullable(),
+  created_at: z.string(),
+  blocked_at: z.string().nullable(),
+  subscriptions: z.number(),
+  active_subscriptions: z.number(),
+  custom_services: z.number(),
+});
+
+const pageFields = { total: z.number(), page: z.number(), page_size: z.number() };
+
+export const adminUserListSchema = z.object({
+  items: z.array(adminUserSchema),
+  ...pageFields,
+  counts: z.object({ all: z.number(), active: z.number(), admins: z.number(), blocked: z.number() }),
+});
+
+export const adminCategorySchema = z.object({
+  id: z.number(),
+  slug: z.string(),
+  name: z.string(),
+  services: z.number(),
+  all_services: z.number(),
+});
+export const adminCategoryListSchema = z.object({ items: z.array(adminCategorySchema) });
+
+export const adminPlanSchema = z.object({
+  id: z.number(),
+  service_id: z.number(),
+  name: z.string(),
+  price: z.number(),
+  currency: currencySchema,
+  billing_period: billingPeriodSchema,
+  subscriptions: z.number(),
+});
+
+export const adminServiceSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  icon: z.string().nullable(),
+  brand_color: z.string(),
+  website: z.string().nullable(),
+  category_id: z.number(),
+  category: z.string(),
+  plans_count: z.number(),
+  subscriptions: z.number(),
+  plans: z.array(adminPlanSchema),
+});
+
+export const adminServiceListSchema = z.object({
+  items: z.array(adminServiceSchema),
+  ...pageFields,
+  summary: z.object({ categories: z.number(), services: z.number(), plans: z.number() }),
+});
+
+export const adminCustomServiceListSchema = z.object({
+  items: z.array(z.object({ name: z.string(), users: z.number(), categories: z.string(), subscriptions: z.number() })),
+});
+
+export const adminSystemSchema = z.object({
+  rates: z.array(adminRateSchema),
+  reminders_today: z.number(),
+  reminders: z.array(
+    z.object({
+      id: z.number(),
+      sent_at: z.string(),
+      due_date: z.string(),
+      days_before: z.number(),
+      nickname: z.string(),
+      service_name: z.string(),
+      icon: z.string(),
+      brand_color: z.string(),
+    }),
+  ),
+});
+
+export const adminRatesRefreshSchema = z.object({ ok: z.boolean(), message: z.string(), rates: z.array(adminRateSchema) });
+
 // ── Типи ────────────────────────────────────────────────────
 
 export type Health = z.infer<typeof healthSchema>;
@@ -238,3 +361,14 @@ export type NextPaymentInfo = NonNullable<Dashboard['next_payment']>;
 export type ChartPoint = Dashboard['chart'][number];
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 export type Settings = z.infer<typeof settingsResponseSchema>;
+export type AdminStats = z.infer<typeof adminStatsSchema>;
+export type AdminLogEntry = z.infer<typeof adminLogEntrySchema>;
+export type AdminRate = z.infer<typeof adminRateSchema>;
+export type AdminUser = z.infer<typeof adminUserSchema>;
+export type AdminUserList = z.infer<typeof adminUserListSchema>;
+export type AdminCategory = z.infer<typeof adminCategorySchema>;
+export type AdminPlan = z.infer<typeof adminPlanSchema>;
+export type AdminService = z.infer<typeof adminServiceSchema>;
+export type AdminServiceList = z.infer<typeof adminServiceListSchema>;
+export type AdminCustomService = z.infer<typeof adminCustomServiceListSchema>['items'][number];
+export type AdminSystem = z.infer<typeof adminSystemSchema>;

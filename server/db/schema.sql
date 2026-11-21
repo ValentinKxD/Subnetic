@@ -16,8 +16,22 @@ CREATE TABLE users (
   telegram_chat_id  INTEGER NULL UNIQUE,
   telegram_username TEXT    NULL,
   telegram_linked_at TEXT   NULL CHECK (telegram_linked_at IS NULL OR telegram_linked_at IS datetime(telegram_linked_at)),
-  created_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+  created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
+  -- Роль: 'admin' бачить адмін-панель. Першого адміністратора призначає npm run make-admin.
+  role              TEXT    NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  -- Час блокування адміністратором; NULL — обліковий запис активний.
+  blocked_at        TEXT    NULL CHECK (blocked_at IS NULL OR blocked_at IS datetime(blocked_at))
 );
+
+-- Журнал дій адміністраторів (хто, що і коли змінив).
+CREATE TABLE admin_log (
+  id         INTEGER PRIMARY KEY,
+  admin_id   INTEGER NULL REFERENCES users (id) ON DELETE SET NULL,
+  action     TEXT    NOT NULL,
+  details    TEXT    NULL,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX ix_admin_log_created ON admin_log (created_at DESC);
 
 CREATE TABLE user_settings (
   user_id     INTEGER PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,

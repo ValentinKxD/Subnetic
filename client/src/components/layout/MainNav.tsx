@@ -1,12 +1,15 @@
 import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
-import { CalendarIcon, DashboardIcon, RepeatIcon, SlidersIcon } from '@/components/ui';
+import { CalendarIcon, DashboardIcon, RepeatIcon, ShieldIcon, SlidersIcon } from '@/components/ui';
+import { useAuth } from '@/hooks/AuthContext';
 import { ui } from '@/lib/ui';
 
 interface NavItem {
   to: string;
   label: string;
   icon: ComponentType<{ size?: number }>;
+  /** Лише для адміністраторів. */
+  adminOnly?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -14,14 +17,19 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/subscriptions', label: 'Підписки', icon: RepeatIcon },
   { to: '/calendar', label: 'Календар і платежі', icon: CalendarIcon },
   { to: '/settings', label: 'Налаштування', icon: SlidersIcon },
+  // Без end: пункт активний для всіх /admin/*.
+  { to: '/admin', label: 'Адмін', icon: ShieldIcon, adminOnly: true },
 ];
 
 /** Навігація-«пілюля». На вузьких екранах — лише іконки (підпис лишається для скрінрідера). */
 export function MainNav() {
+  const { user } = useAuth();
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === 'admin');
+
   return (
     <nav aria-label="Головне меню" className={ui.appHeader.navWrap}>
       <div className={ui.nav.pill}>
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {items.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

@@ -10,6 +10,13 @@ import {
   type RegisterData,
 } from '@shared/auth';
 import type {
+  AdminCategoryInput,
+  AdminPlanInput,
+  AdminServiceInput,
+  AdminServicePatch,
+  AdminUserPatch,
+} from '@shared/admin';
+import type {
   CustomPlanInput,
   CustomServiceInput,
   PaymentHistoryQuery,
@@ -20,6 +27,16 @@ import type {
   SubscriptionUpdateInput,
 } from '@shared/domain';
 import {
+  adminCategoryListSchema,
+  adminCategorySchema,
+  adminCustomServiceListSchema,
+  adminRatesRefreshSchema,
+  adminServiceListSchema,
+  adminServiceSchema,
+  adminStatsSchema,
+  adminSystemSchema,
+  adminUserListSchema,
+  adminUserSchema,
   calendarSchema,
   catalogSchema,
   createdPlanSchema,
@@ -41,7 +58,9 @@ import {
 import { api } from './client';
 
 /** Рядок запиту з непорожніх параметрів. */
-function qs(params: Record<string, string | number | undefined | null>): string {
+type QueryParams = Record<string, string | number | undefined | null>;
+
+function qs(params: QueryParams): string {
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== '') sp.set(k, String(v));
@@ -123,3 +142,39 @@ export const linkTelegram = () => api.post('/telegram/link', undefined, { schema
 export const unlinkTelegram = () => api.post('/telegram/unlink', undefined, { schema: telegramSettingsSchema });
 export const testTelegram = () => api.post('/telegram/test', undefined, { schema: telegramTestSchema });
 export const sendReminderNow = () => api.post('/telegram/remind-now', undefined, { schema: telegramTestSchema });
+
+// ── Адмін-панель ────────────────────────────────────────────
+
+export const admin = {
+  stats: (signal?: AbortSignal) => api.get('/admin/stats', { schema: adminStatsSchema, signal }),
+  system: (signal?: AbortSignal) => api.get('/admin/system', { schema: adminSystemSchema, signal }),
+  refreshRates: () => api.post('/admin/rates/refresh', undefined, { schema: adminRatesRefreshSchema }),
+
+  users: (query: QueryParams, signal?: AbortSignal) =>
+    api.get(`/admin/users${qs(query)}`, { schema: adminUserListSchema, signal }),
+  updateUser: (id: number, data: AdminUserPatch) => api.patch(`/admin/users/${id}`, data, { schema: adminUserSchema }),
+  unlinkUserTelegram: (id: number) =>
+    api.post(`/admin/users/${id}/unlink-telegram`, undefined, { schema: adminUserSchema }),
+  deleteUser: (id: number) => api.delete<void>(`/admin/users/${id}`),
+
+  categories: (signal?: AbortSignal) => api.get('/admin/categories', { schema: adminCategoryListSchema, signal }),
+  createCategory: (data: AdminCategoryInput) => api.post('/admin/categories', data, { schema: adminCategorySchema }),
+  updateCategory: (id: number, data: Partial<AdminCategoryInput>) =>
+    api.patch(`/admin/categories/${id}`, data, { schema: adminCategorySchema }),
+  deleteCategory: (id: number) => api.delete<void>(`/admin/categories/${id}`),
+
+  services: (query: QueryParams, signal?: AbortSignal) =>
+    api.get(`/admin/services${qs(query)}`, { schema: adminServiceListSchema, signal }),
+  createService: (data: AdminServiceInput) => api.post('/admin/services', data, { schema: adminServiceSchema }),
+  updateService: (id: number, data: AdminServicePatch) =>
+    api.patch(`/admin/services/${id}`, data, { schema: adminServiceSchema }),
+  deleteService: (id: number) => api.delete<void>(`/admin/services/${id}`),
+  createPlan: (serviceId: number, data: AdminPlanInput) =>
+    api.post(`/admin/services/${serviceId}/plans`, data, { schema: adminServiceSchema }),
+  updatePlan: (id: number, data: Partial<AdminPlanInput>) =>
+    api.patch(`/admin/plans/${id}`, data, { schema: adminServiceSchema }),
+  deletePlan: (id: number) => api.delete(`/admin/plans/${id}`, { schema: adminServiceSchema }),
+
+  customServices: (signal?: AbortSignal) =>
+    api.get('/admin/custom-services', { schema: adminCustomServiceListSchema, signal }),
+};

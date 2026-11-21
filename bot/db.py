@@ -264,6 +264,7 @@ def find_due_payments(db_path: Path | str, hour: int, due_dates: list[date]) -> 
                 JOIN plans p          ON p.id = s.plan_id
                 JOIN services sv      ON sv.id = p.service_id
                 WHERE u.telegram_chat_id IS NOT NULL
+                  AND u.blocked_at IS NULL
                   AND st.remind_hour = ?
                   AND s.status IN ('active', 'trial')
                   AND s.next_payment_date IN ({placeholders})

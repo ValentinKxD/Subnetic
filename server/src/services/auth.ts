@@ -1,4 +1,4 @@
-import type { LoginData, ProfileData, PublicUser, RegisterData } from '../../../shared/auth.js';
+import { BLOCKED_MESSAGE, type LoginData, type ProfileData, type PublicUser, type RegisterData } from '../../../shared/auth.js';
 import {
   findUserByEmail,
   findUserByNickname,
@@ -10,7 +10,7 @@ import { conflict, HttpError } from './errors.js';
 import { hashPassword, verifyPassword } from './password.js';
 
 export function toPublicUser(u: User): PublicUser {
-  return { id: u.id, nickname: u.nickname, email: u.email, phone: u.phone };
+  return { id: u.id, nickname: u.nickname, email: u.email, phone: u.phone, role: u.role };
 }
 
 /** Зайняті нікнейм/email (крім самого користувача при редагуванні профілю). */
@@ -41,6 +41,7 @@ export function login(data: LoginData): User {
   if (!user || !verifyPassword(data.password, user.password_hash)) {
     throw new HttpError(401, 'Невірний email/нікнейм або пароль');
   }
+  if (user.blocked_at !== null) throw new HttpError(403, BLOCKED_MESSAGE);
   return user;
 }
 

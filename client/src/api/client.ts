@@ -1,4 +1,5 @@
 import type { ZodType, ZodTypeDef } from 'zod';
+import { BLOCKED_MESSAGE } from '@shared/auth';
 
 /** Помилка відповіді API: HTTP-статус, загальне повідомлення та помилки полів `{error, fields}`. */
 export class ApiError extends Error {
@@ -88,6 +89,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions<T> = {
     // Сесії немає або вона минула — сервер уже прибрав куку.
     if (!skipAuthRedirect) redirectToLogin();
     throw new ApiError(401, extractMessage(data, 'Потрібна авторизація'), extractFields(data), data);
+  }
+
+  // Обліковий запис заблоковано: сервер уже завершив сесію — виходимо й пояснюємо на сторінці входу.
+  if (res.status === 403 && extractMessage(data, '') === BLOCKED_MESSAGE && window.location.pathname !== LOGIN_PATH) {
+    window.location.assign(`${LOGIN_PATH}?blocked=1`);
   }
 
   if (!res.ok) {

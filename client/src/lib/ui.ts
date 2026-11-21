@@ -402,5 +402,89 @@ export const ui = {
     tooltipLabel: 'text-xs font-medium text-muted',
   },
 
+  // ── Адмін-панель ──────────────────────────────────────────
+
+  admin: {
+    /** Розділи: Огляд · Користувачі · Каталог · Курси і нагадування (пілюлі як ui.chip). */
+    sections: 'flex flex-wrap gap-2',
+    stats: 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4',
+    twoCol: 'grid grid-cols-1 items-start gap-6 lg:grid-cols-2 [&>*]:min-w-0',
+    /** Список + бічна картка (користувач, сервіс). */
+    withAside: 'grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px] [&>*]:min-w-0',
+    aside: 'flex flex-col gap-5 xl:sticky xl:top-6',
+
+    // Графік реєстрацій за тиждень
+    bars: 'flex h-[200px] items-end gap-2 sm:gap-4',
+    barCol: 'flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2',
+    barValue: 'text-[13px] font-semibold tabular-nums text-text',
+    bar: 'w-full max-w-12 rounded-b rounded-t-lg bg-accent/40',
+    barToday: 'w-full max-w-12 rounded-b rounded-t-lg bg-primary',
+    barLabel: 'text-[13px] text-muted',
+
+    // Популярні сервіси
+    topList: 'flex flex-col gap-4',
+    topRow: 'flex items-center gap-3',
+    topBody: 'flex min-w-0 flex-1 flex-col gap-1.5',
+    topHead: 'flex items-baseline justify-between gap-3',
+    topName: 'truncate text-[15px] font-semibold text-text',
+    topCount: 'shrink-0 text-sm text-muted',
+    track: 'h-1.5 rounded-full bg-bg',
+    fill: 'h-1.5 rounded-full bg-primary',
+
+    // Картки зі списком рядків без внутрішніх відступів (фонові задачі, журнал)
+    flushCard: 'overflow-hidden',
+    flushTitle: 'border-b border-border px-6 py-5 text-lg font-semibold text-text',
+    jobRow: 'flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-border px-6 py-4 last:border-b-0',
+    jobMain: 'flex min-w-[200px] flex-1 flex-col gap-0.5',
+    jobTitle: 'text-[15px] font-semibold text-text',
+    jobInfo: 'text-sm text-muted',
+    logRow: 'flex gap-4 border-b border-border px-6 py-3.5 last:border-b-0',
+    logTime: 'w-24 shrink-0 pt-px text-sm tabular-nums text-muted',
+    logBody: 'flex min-w-0 flex-col gap-0.5',
+    logText: 'text-[15px] text-text',
+    logMeta: 'text-[13px] text-muted',
+
+    // Таблиці користувачів і сервісів
+    table: 'min-w-[760px]',
+    rowSelected: 'border-t border-border bg-accent-soft/60 transition-colors',
+    userCell: 'flex min-w-0 items-center gap-3',
+    avatar:
+      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[13px] font-bold text-accent-text',
+    avatarLg:
+      'flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-on-primary',
+    pager: 'flex items-center gap-2',
+
+    // Бічна картка
+    asideHead: 'flex min-w-0 items-center gap-4',
+    asideTitle: 'flex flex-wrap items-center justify-between gap-3',
+    dl: 'grid grid-cols-2 gap-x-4 gap-y-3',
+    dt: 'text-[13px] text-muted',
+    dd: 'text-[15px] font-medium text-text',
+    note: 'rounded-xl bg-bg px-3.5 py-3 text-[13px] text-muted',
+    actions: 'flex flex-wrap gap-3',
+    dangerZone: 'flex flex-wrap gap-3 border-t border-border pt-4',
+
+    // Редагування сервісу
+    nameRow: 'flex items-end gap-3',
+    formGrid: 'grid grid-cols-1 gap-4 sm:grid-cols-2',
+    plans: 'flex flex-col gap-1 rounded-xl border border-border px-4 py-2',
+    plansHead: 'flex items-center justify-between gap-3 py-2',
+    plansTitle: 'text-[15px] font-semibold text-text',
+    planRow: 'flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border py-2.5',
+    planName: 'min-w-0 flex-1 text-[15px] font-semibold text-text',
+    planPeriod: 'font-normal text-muted',
+    planPrice: 'text-[15px] font-semibold tabular-nums text-text',
+    planSubs: 'text-[13px] text-muted',
+    footer: 'flex flex-wrap justify-end gap-3',
+    categoryRow: 'flex flex-wrap items-center gap-3 border-t border-border py-3 first:border-t-0',
+
+    // Курси і нагадування
+    rates: 'grid grid-cols-1 gap-4 sm:grid-cols-2',
+    rateBox: 'flex flex-col gap-1 rounded-xl border border-border p-4',
+    rateCode: 'text-sm font-medium text-muted',
+    rateValue: 'text-2xl font-bold tabular-nums text-text',
+    rateMeta: 'text-[13px] text-muted',
+  },
+
   srOnly: 'sr-only',
 } as const;

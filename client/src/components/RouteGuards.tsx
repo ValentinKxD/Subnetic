@@ -25,6 +25,13 @@ export function ProtectedRoute() {
   return <Outlet />;
 }
 
+/** Адмін-панель: лише role === 'admin', решту — на головну. Ставиться всередині ProtectedRoute. */
+export function AdminRoute() {
+  const { user } = useAuth();
+  if (user?.role !== 'admin') return <Navigate to="/" replace />;
+  return <Outlet />;
+}
+
 /** Повертає безпечний внутрішній шлях з ?next= (захист від open redirect). */
 export function useNextPath(): string {
   const [params] = useSearchParams();
