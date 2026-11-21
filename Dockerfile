@@ -31,8 +31,7 @@ COPY --from=build /app/node_modules node_modules
 COPY --from=build /app/shared shared
 COPY --from=build /app/server server
 COPY --from=build /app/client/dist client/dist
-COPY docker/app-entrypoint.sh /usr/local/bin/app-entrypoint.sh
-RUN chmod +x /usr/local/bin/app-entrypoint.sh && mkdir -p /data && chown node:node /data
+RUN mkdir -p /data && chown node:node /data
 
 ENV PORT=3001 \
     SUBNETIC_DB=/data/subnetic.db \
@@ -44,4 +43,5 @@ WORKDIR /app/server
 EXPOSE 3001
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
   CMD node -e "fetch('http://localhost:'+(process.env.PORT||3001)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-ENTRYPOINT ["app-entrypoint.sh"]
+# Перший запуск: бази немає → створюємо її з каталогом (seed), далі — сервер.
+CMD ["sh", "-c", "[ -f \"$SUBNETIC_DB\" ] || node --import tsx src/db/seed.ts; exec node --import tsx src/index.ts"]

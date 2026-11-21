@@ -19,7 +19,7 @@ export function AuthLayout() {
       <main className={ui.page.centered}>
         <Outlet />
       </main>
-      <footer className={ui.page.footer}>Курсовий проєкт · Subnetic — сервіс управління підписками</footer>
+      <footer className={ui.page.footer}>Курсовий робота · Subnetic - сервіс управління підписками</footer>
     </div>
   );
 }
