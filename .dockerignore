@@ -12,3 +12,4 @@ bot/venv
 docs
 *.log
 *.bat
+docker-data
