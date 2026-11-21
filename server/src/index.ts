@@ -4,7 +4,7 @@ import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { requireAuth } from './auth/session.js';
-import { DB_PATH, getDb } from './db/index.js';
+import { closeDb, DB_PATH, getDb } from './db/index.js';
 import { authRouter } from './routes/auth.js';
 import { catalogRouter } from './routes/catalog.js';
 import { dashboardRouter } from './routes/dashboard.js';
@@ -80,7 +80,7 @@ app.use((err: Error & { type?: string; code?: string }, _req: Request, res: Resp
   res.status(500).json({ error: 'Внутрішня помилка сервера' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Subnetic API: http://localhost:${PORT}`);
   // Курси НБУ: одразу після старту (у фоні) і щодоби. Збій мережі сервер не зупиняє.
   startRatesUpdater();
@@ -91,3 +91,13 @@ app.listen(PORT, () => {
       : 'Telegram: TELEGRAM_BOT_TOKEN / TELEGRAM_BOT_NAME не задано — бот не налаштований.',
   );
 });
+
+// Коректна зупинка (docker stop, Ctrl+C): закриваємо БД, щоб дані з -wal перейшли в subnetic.db.
+function shutdown(signal: string): void {
+  console.log(`${signal}: зупинка сервера`);
+  server.close();
+  closeDb();
+  process.exit(0);
+}
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));
